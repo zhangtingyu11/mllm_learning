@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import copy
 
 class Moco(nn.Module):
     def __init__(self, 
@@ -16,7 +17,7 @@ class Moco(nn.Module):
 
         # 传进来的是已经参数初始化后的encoder
         self.encoder_q = base_encoder
-        self.encoder_k = base_encoder
+        self.encoder_k = copy.deepcopy(base_encoder)
 
         # 复制encoder_q的参数到encoder_k
         for param_q, param_k in zip(self.encoder_q.parameters(), self.encoder_k.parameters()):
@@ -34,7 +35,7 @@ class Moco(nn.Module):
     @torch.no_grad()
     def _momentum_update_key_encoder(self):
         for param_q, param_k in zip(self.encoder_q.parameters(), self.encoder_k.parameters()):
-            param_k.data = param_k.data * self.m + (param_q.data) * (1 - self.m)
+            param_k.data = param_k.data * self.momentum + (param_q.data) * (1 - self.momentum)
     
     @torch.no_grad()
     def _dequeue_and_enqueue(self, keys):
@@ -48,10 +49,10 @@ class Moco(nn.Module):
         # 入队
         self.queue[:, ptr:ptr+batch_size] = keys.T
         # 移动指针，当相于出队
-        ptr = (ptr + batch_size) % self.K
+        ptr = (ptr + batch_size) % self.queue_size
         self.queue_ptr[0] = ptr
 
-    def forward(self, img_q, img_k):
+    def forward(self, img_q, img_k, mode="loss"):
         """前向过程
 
         Args:
@@ -63,23 +64,25 @@ class Moco(nn.Module):
         
         with torch.no_grad():
             # 先更新编码器，再求key的特征
-            self._momentum_update_key_encoder()
+            if self.training:
+                self._momentum_update_key_encoder()
             k = self.encoder_k(img_k)
             k = F.normalize(k, dim=1)
-        
-        # 相当于先做q * k, 对特征维度求和, 也就是batch_size个样本对应做内积(注意不是两两内积)
-        l_pos = torch.einsum('nc,nc->n', [q, k]).unsqueeze(1)
-        l_neg = torch.einsum('nc,ck->nk', [q, self.queue.clone().detach()])
-        if self.iter % 100 == 0:
-            print(f"Iter {self.iter}: Pos Similarity = {l_pos.mean():.3f}")
-            print(f"Iter {self.iter}: Neg Similarity = {l_neg.mean():.3f}")
-        self.iter += 1
-        # 将正负样本的相似度拼接起来
-        logits = torch.cat([l_pos, l_neg], dim=1) / self.T
-        labels = torch.zeros(logits.shape[0], dtype=torch.long).to(img_q.device)
-        # infoNCE其实就是cross entropy loss
-        loss = F.cross_entropy(logits, labels)
-        
-        # 更新队列
-        self._dequeue_and_enqueue(k)
-        return loss
+        if mode == "loss":
+            # 相当于先做q * k, 对特征维度求和, 也就是batch_size个样本对应做内积(注意不是两两内积)
+            l_pos = torch.einsum('nc,nc->n', [q, k]).unsqueeze(1)
+            l_neg = torch.einsum('nc,ck->nk', [q, self.queue.clone().detach()])
+            self.l_pos = l_pos
+            self.l_neg = l_neg
+            # 将正负样本的相似度拼接起来
+            logits = torch.cat([l_pos, l_neg], dim=1) / self.temperature
+            labels = torch.zeros(logits.shape[0], dtype=torch.long).to(img_q.device)
+            # infoNCE其实就是cross entropy loss
+            loss = F.cross_entropy(logits, labels)
+            
+            # 更新队列
+            if self.training:
+                self._dequeue_and_enqueue(k)
+            return loss
+        else:
+            raise NotImplementedError

@@ -10,3 +10,5 @@ uv sync
 uv add hydra-core
 uv add torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 --index https://download.pytorch.org/whl/cu118
 ```
+
+修改.env里面的PYTHONPATH为当前主目录

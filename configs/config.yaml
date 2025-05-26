@@ -1,4 +1,5 @@
 defaults:
+  - _self_
   - model: mocov1
   - dataset: cifar10
 

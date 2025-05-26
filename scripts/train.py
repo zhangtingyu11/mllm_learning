@@ -5,7 +5,7 @@ from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
 from src.utils.common.logger import setup_logging
 
-@hydra.main(config_path="../configs", config_name="config")
+@hydra.main(config_path="../configs", config_name="config", version_base=None)
 def main(cfg: DictConfig):
     setup_logging(
         log_dir="logs",

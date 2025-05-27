@@ -1,6 +1,6 @@
 import torchvision.transforms as transforms
 
-class MocoV1Transform():
+class MocoV1PretrainTrainTransform():
     def __init__(self):
         self.transform = transforms.Compose([
             transforms.RandomResizedCrop(32, scale=(0.2, 1.0)),
@@ -15,6 +15,31 @@ class MocoV1Transform():
         # 因为要进行两次随机的数据增强，因此返回两个样本
         return self.transform(x), self.transform(x)
 
+MocoV1PretrainValTransform = MocoV1PretrainTrainTransform
+
+class MocoV1FinetuneTrainTransform():
+    def __init__(self):
+        self.transform = transforms.Compose([
+            transforms.RandomResizedCrop(32),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010])
+        ])
+        
+    def __call__(self, x):
+        # 因为要进行两次随机的数据增强，因此返回两个样本
+        return self.transform(x)
+    
+class MocoV1FinetuneValTransform():
+    def __init__(self):
+        self.transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010])
+        ])
+        
+    def __call__(self, x):
+        # 因为要进行两次随机的数据增强，因此返回两个样本
+        return self.transform(x)
 
 class MocoV2Transform():
     def __init__(self):

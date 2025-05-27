@@ -1,5 +1,0 @@
-_target_: torchvision.datasets.CIFAR10
-root: /home/zty/Dataset
-transform:
-    _target_: src.dataset.MocoV1Transform
-download: True

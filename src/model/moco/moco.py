@@ -52,7 +52,7 @@ class Moco(nn.Module):
         ptr = (ptr + batch_size) % self.queue_size
         self.queue_ptr[0] = ptr
 
-    def forward(self, img_q, img_k, mode="loss"):
+    def forward(self, img_q, img_k=None, mode="loss"):
         """前向过程
 
         Args:
@@ -61,6 +61,9 @@ class Moco(nn.Module):
         """
         q = self.encoder_q(img_q)
         q = F.normalize(q, dim=1)
+        
+        if img_k is None:
+            return q
         
         with torch.no_grad():
             # 先更新编码器，再求key的特征

@@ -1,15 +1,14 @@
 import random
 import numpy as np
 import torch
-import os
 
 def set_random_seed(seed: int):
     """
-    设置全局随机种子（支持PyTorch/Numpy/Python）
+    设置全局随机种子(支持PyTorch/Numpy/Python)
     
     参数:
         seed (int): 随机种子
-        deterministic (bool): 是否启用PyTorch确定性模式（更严格但可能降低性能）
+        deterministic (bool): 是否启用PyTorch确定性模式(更严格但可能降低性能)
     """
     # 基础随机种子
     random.seed(seed)
@@ -24,3 +23,4 @@ def set_random_seed(seed: int):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     torch.use_deterministic_algorithms(True)
+

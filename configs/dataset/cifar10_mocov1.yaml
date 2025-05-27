@@ -1,0 +1,15 @@
+_target_: src.dataset.CustomCIFAR10
+root: /home/zty/Dataset
+download: True
+transforms_cfg:
+    pretraining:
+        train:
+            _target_: src.dataset.MocoV1PretrainTrainTransform
+        val:
+            _target_: src.dataset.MocoV1PretrainValTransform
+
+    finetuning:
+        train:
+            _target_: src.dataset.MocoV1FinetuneTrainTransform
+        val:
+            _target_: src.dataset.MocoV1FinetuneValTransform
